@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Universal AI Interface</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <div class="brand-title">Universal AI</div>
+          <div class="brand-sub">Interface</div>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Primary">
+        <button type="button" class="nav-item active" data-view="chat">
+          <span class="nav-icon" aria-hidden="true">◆</span>
+          Chat
+        </button>
+        <button type="button" class="nav-item" data-view="connectors">
+          <span class="nav-icon" aria-hidden="true">◇</span>
+          Connectors
+        </button>
+        <button type="button" class="nav-item" data-view="overview">
+          <span class="nav-icon" aria-hidden="true">○</span>
+          Overview
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="pill" id="pill-inference" title="From config / UAI_INFERENCE">local</div>
+        <button type="button" class="sidebar-toggle" id="sidebar-collapse" aria-label="Collapse sidebar">⟨</button>
+      </div>
+    </aside>
+
+    <div class="main-wrap">
+      <header class="topbar">
+        <button type="button" class="menu-btn" id="menu-btn" aria-label="Open menu">☰</button>
+        <h1 class="page-title" id="page-title">Chat</h1>
+        <div class="topbar-actions">
+          <button type="button" class="btn ghost btn-sm" id="btn-clear-chat" title="Clear conversation">Clear</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <section id="view-chat" class="view active" aria-labelledby="page-title">
+          <div class="chat-layout">
+            <div class="chat-thread" id="chat-thread" role="log" aria-live="polite">
+              <article class="msg assistant">
+                <div class="msg-meta">Assistant</div>
+                <div>This is the Universal AI Interface web shell — same backend as <code>uai chat</code>. Try “what tasks do I have”, “ping”, or “add note: hello”.</div>
+              </article>
+            </div>
+            <div class="composer">
+              <textarea id="chat-input" rows="2" placeholder="Ask anything — search, ping mock_service, add notes…" autocomplete="off"></textarea>
+              <div class="composer-actions">
+                <span class="hint"><kbd>Enter</kbd> send · <kbd>Shift</kbd>+<kbd>Enter</kbd> newline</span>
+                <button type="button" class="btn primary" id="chat-send">Send</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-connectors" class="view" hidden>
+          <p class="lead">Registered connectors and capabilities exposed to the intent router.</p>
+          <div id="connectors-grid" class="card-grid"></div>
+          <p id="connectors-empty" class="muted hidden">No connectors loaded.</p>
+        </section>
+
+        <section id="view-overview" class="view" hidden>
+          <p class="lead">Runtime snapshot from your configuration.</p>
+          <div class="tiles" id="status-tiles"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div class="backdrop" id="backdrop" hidden></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

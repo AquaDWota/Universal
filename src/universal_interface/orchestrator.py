@@ -1,23 +1,12 @@
 from __future__ import annotations
 
-import os
-
 from universal_interface.action_engine import execute_actions_sequentially
 from universal_interface.app_context import AppContext
+from universal_interface.config import llm_inference_enabled
 from universal_interface.database import record_audit
 from universal_interface.intent_router import route_intent
 from universal_interface.llm import complete_text
 from universal_interface.unified_search import universal_query
-
-
-def _has_llm_credentials() -> bool:
-    return bool(
-        os.getenv("OPENAI_API_KEY")
-        or os.getenv("ANTHROPIC_API_KEY")
-        or os.getenv("AZURE_API_KEY")
-        or os.getenv("LITELLM_PROXY_API_KEY")
-        or os.getenv("GEMINI_API_KEY")
-    )
 
 
 async def handle_turn(ctx: AppContext, user_text: str) -> str:
@@ -70,7 +59,7 @@ async def handle_turn(ctx: AppContext, user_text: str) -> str:
 
     body = "\n\n".join(parts) if parts else "_No structured output._"
 
-    if _has_llm_credentials():
+    if llm_inference_enabled(ctx.config.ai):
         sys = (
             "You are the Universal AI Interface response synthesizer. "
             "Combine the structured notes into a concise, helpful reply for the user. "

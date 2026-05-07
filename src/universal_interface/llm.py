@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from universal_interface.config import AIConfig
+from universal_interface.config import AIConfig, resolved_chat_model
 
 
 async def complete_json(
@@ -15,8 +15,9 @@ async def complete_json(
     """Ask the configured model for a JSON object."""
     from litellm import acompletion
 
+    model, _mode = resolved_chat_model(ai)
     base: dict[str, Any] = {
-        "model": ai.primary_model,
+        "model": model,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
@@ -40,8 +41,9 @@ async def complete_text(
 ) -> str:
     from litellm import acompletion
 
+    model, _mode = resolved_chat_model(ai)
     resp = await acompletion(
-        model=ai.primary_model,
+        model=model,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user},

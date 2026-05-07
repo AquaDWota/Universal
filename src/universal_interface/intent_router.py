@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from typing import Any
 
-from universal_interface.config import AIConfig
+from universal_interface.config import AIConfig, llm_inference_enabled
 from universal_interface.llm import complete_json
 from universal_interface.models import Action, ActionKind, ActionRisk, IntentPlan
 from universal_interface.registry import ConnectorRegistry
@@ -36,16 +35,6 @@ Rules:
 """
 
 
-def _has_llm_credentials() -> bool:
-    return bool(
-        os.getenv("OPENAI_API_KEY")
-        or os.getenv("ANTHROPIC_API_KEY")
-        or os.getenv("AZURE_API_KEY")
-        or os.getenv("LITELLM_PROXY_API_KEY")
-        or os.getenv("GEMINI_API_KEY")
-    )
-
-
 def _parse_action_blob(blob: dict[str, Any]) -> Action:
     kind = ActionKind.READ
     risk = ActionRisk.LOW
@@ -71,6 +60,64 @@ def _parse_action_blob(blob: dict[str, Any]) -> Action:
 def heuristic_plan(user_text: str, registry: ConnectorRegistry) -> IntentPlan:
     t = user_text.lower().strip()
     names = {c.name for c in registry.all()}
+    raw_stripped = user_text.strip()
+
+    url_only = re.match(r"^\s*(https://[^\s]+)\s*$", raw_stripped)
+    if url_only and "http_fetch" in names:
+        return IntentPlan(
+            summary="Fetch the given HTTPS URL.",
+            actions=[
+                Action(
+                    connector="http_fetch",
+                    action_id="fetch_url",
+                    params={"url": url_only.group(1)},
+                    kind=ActionKind.READ,
+                    risk=ActionRisk.LOW,
+                )
+            ],
+        )
+
+    if "github" in names and "github" in t:
+        if re.search(r"\bprs?\b|pull\s*requests?", t):
+            return IntentPlan(
+                summary="Search open GitHub pull requests.",
+                actions=[
+                    Action(
+                        connector="github",
+                        action_id="search_pull_requests",
+                        params={"q": "is:pr is:open sort:updated-desc"},
+                        kind=ActionKind.READ,
+                        risk=ActionRisk.LOW,
+                    )
+                ],
+            )
+        if "issue" in t:
+            return IntentPlan(
+                summary="Search open GitHub issues.",
+                actions=[
+                    Action(
+                        connector="github",
+                        action_id="search_issues",
+                        params={"q": "is:issue is:open sort:updated-desc"},
+                        kind=ActionKind.READ,
+                        risk=ActionRisk.LOW,
+                    )
+                ],
+            )
+
+    if "linear" in names and ("linear" in t or "assigned issues" in t):
+        return IntentPlan(
+            summary="List Linear issues assigned to you.",
+            actions=[
+                Action(
+                    connector="linear",
+                    action_id="list_assigned_issues",
+                    params={"first": 25},
+                    kind=ActionKind.READ,
+                    risk=ActionRisk.LOW,
+                )
+            ],
+        )
 
     if "ping" in t and "mock_service" in names:
         return IntentPlan(
@@ -117,7 +164,7 @@ async def route_intent(
     registry: ConnectorRegistry,
     ai: AIConfig,
 ) -> IntentPlan:
-    if _has_llm_credentials():
+    if llm_inference_enabled(ai):
         user = (
             "Available connectors:\n"
             f"{registry.describe_for_prompt()}\n\n"
